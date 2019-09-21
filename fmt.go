@@ -7,6 +7,7 @@ package main
  
 import (
 	"fmt"
+	"regexp"
 	"time"
 )
 
@@ -37,6 +38,18 @@ func readableSize(size uint64) string {
 	}
 	return conversion
 }
+
+// Replace newlines with another character (e.g., <br>) 
+func replaceNewLine(input string, replacement string) string {
+	re := regexp.MustCompile(`\r?\n`)
+	return re.ReplaceAllString(input, replacement)
+}
+
+func addFileName(fileName string, s string) string {
+	s = fmt.Sprintln("File:    ", fileName) + s
+	return s
+}
+
 
 // FmtHeader formats the output of a SIF file global header.
 func (fimg *FileImage) FmtHeader() string {

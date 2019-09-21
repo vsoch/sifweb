@@ -91,6 +91,13 @@ func (fimg *FileImage) readDescriptors() error {
 	return nil
 }
 
+// returnResult back to the browser, in the innerHTML of the result element
+func returnResult(output string) {
+	js.Global().Get("document").
+		Call("getElementById", "result").
+		Set("innerHTML", output)
+}
+
 // loadContainer is linked with the JavaScript function of the same name.
 // It takes as input the binary data from the SIF image, and attempts
 // to read the header. This has to be modified to compile with wasm.
@@ -103,19 +110,19 @@ func loadContainer(this js.Value, val []js.Value) interface{} {
 
 	// read the string of given size to bytes from the SIF file
 	if err := fimg.loadBytes(val[1], val[2].Int()); err != nil {
-		fmt.Println("Error loading bytes")
+		returnResult("Error loading bytes.")
 		return nil
 	}
 
 	// read global header from SIF file
 	if err := fimg.readHeader(); err != nil {
-		fmt.Println("Error reading header")
+		returnResult("Error reading header.")
 		return nil
 	}
 
 	// validate global header
 	if err := fimg.isValidSif(); err != nil {
-		fmt.Println("Not valid sif")
+		returnResult("This is not a valid sif")
 		return nil
 	}
 
@@ -124,13 +131,25 @@ func loadContainer(this js.Value, val []js.Value) interface{} {
 		fmt.Println("Skipping reading descriptors: ", err)
 	}
 
-	// Print header, and descriptors
-	fmt.Print(fimg.FmtHeader())
+	// header with newlines
+	header := fimg.FmtHeader()
+
+	// Add file info
+	header = addFileName(val[0].String(), header)
+
+	// Print header, and descriptors to console
+	fmt.Print(header)
+
+	// Replace with breaks
+	header = replaceNewLine(header, "<br>")
 
 	fmt.Println("Container id:", fimg.Header.ID)
 	fmt.Println("Created on:  ", time.Unix(fimg.Header.Ctime, 0))
 	fmt.Println("Modified on: ", time.Unix(fimg.Header.Mtime, 0))
 	fmt.Println("----------------------------------------------------")
+
+	// Send result back to browser
+	returnResult(header)
 	
 	return nil
 }

@@ -38,7 +38,6 @@ thead tr td {
 /* File Upload */
 
 .zone {
-  margin: auto;
   border: 5px dashed white;
   text-align: center;
   background-color: #d3a5dc9c;
@@ -127,16 +126,24 @@ thead tr td {
 }
 
 .container {
-  width: 650px;
-  display: block;
-  position: relative;
-  box-sizing: border-box;
-  padding: 60px;
-  top: 100px;
-  left: calc(50% - 325px);
-  box-shadow: -10px 10px 40px 0px rgba(0, 0, 0, 0.3);
-  background-color: mediumorchid;
-  border-radius: 20px;
+  margin-top:100px;
+}
+
+#result {
+  color: white;
+}
+
+.left-side {
+    background-color: mediumorchid;
+    border-radius: 30px;
+    padding: 30px;
+}
+
+.right-side {
+    background-color: mediumorchid;
+    border-radius: 30px;
+    padding: 30px;
+    margin-left: 20px;
 }
 
 .label, .form input, .form textarea {
