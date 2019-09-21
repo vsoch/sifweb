@@ -59,17 +59,25 @@ func (fimg *FileImage) isValidSif() error {
 	return nil
 }
 
+// Seek to a particular spot in the Reader, exit on error
+func (fimg *FileImage) seek(offset int64) error {
+
+	_, err := fimg.Reader.Seek(offset, 0); 
+	if err != nil {
+		return fmt.Errorf("seek() to offset:%s %s", offset, err)
+	}
+	return nil
+
+}
+
 
 // Read descriptors from the SIF
 // https://github.com/sylabs/sif/blob/master/pkg/sif/load.go#L29
 func (fimg *FileImage) readDescriptors() error {
 
+
 	fmt.Println("fimg.Header.Descroff", fimg.Header.Descroff)
-	// the start of descriptors is at fimg.Header.Descoff
-	_, err := fimg.Reader.Seek(fimg.Header.Descroff, 0); 
-	if err != nil {
-		return fmt.Errorf("seek() setting to descriptors start: %s", err)
-	}
+	fimg.seek(fimg.Header.Descroff)
 
 	fmt.Println("fimg.Header.Dtotal", fimg.Header.Dtotal)
 
