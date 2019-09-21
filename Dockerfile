@@ -1,5 +1,5 @@
 FROM golang:1.12
-# docker build -t vanessa/containerflow .
+# docker build -t vanessa/sifweb .
 RUN apt-get update && apt-get install -y nginx git python build-essential
 WORKDIR /opt
 RUN git clone https://github.com/emscripten-core/emsdk.git && \
