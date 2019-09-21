@@ -87,7 +87,7 @@ import (
 	"io"
 	"os"
 
-	uuid "github.com/satori/go.uuid"
+	uuid "github.com/google/uuid"
 )
 
 // SIF header constants and quantities.

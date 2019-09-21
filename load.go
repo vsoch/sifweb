@@ -10,19 +10,23 @@ import (
 	"bytes"
 	"fmt"
 	"syscall/js"
-	"strings"
 	"time"
 )
 
 
 // loadBytes loads an imageString from the browser and populates FileImage with data.
-func (fimg *FileImage) loadBytes(imageString string, size int) error {
+func (fimg *FileImage) loadBytes(value js.Value, size int) error {
 
-	// Read in the string to bytes
-	reader := strings.NewReader(imageString)
+	// We can use CopyBytesToGo, need golang 1.13+
 	sif := make([]byte, size)
+	fmt.Println(value)
+	howmany := js.CopyBytesToGo(sif, value)
+	fmt.Println(howmany)
+
+	// Read in the string to bytes, n should equal size
+	reader := bytes.NewReader(sif)
         n, _ := reader.Read(sif)
-	fmt.Println(string(sif[:n]))
+	fmt.Println(sif)
 
 	// Save the data and size to the FileImage
 	fimg.Filesize = int64(n)
@@ -60,6 +64,7 @@ func (fimg *FileImage) isValidSif() error {
 // https://github.com/sylabs/sif/blob/master/pkg/sif/load.go#L29
 func (fimg *FileImage) readDescriptors() error {
 
+	fmt.Println("fimg.Header.Descroff", fimg.Header.Descroff)
 	// the start of descriptors is at fimg.Header.Descoff
 	_, err := fimg.Reader.Seek(fimg.Header.Descroff, 0); 
 	if err != nil {
@@ -77,7 +82,7 @@ func (fimg *FileImage) readDescriptors() error {
 
 	// Initialize descriptor array (slice) and read them all from file
 	// This seems to be too much for the browser	
-	fimg.DescrArr = make([]Descriptor, DescrNumEntries) // fimg.Header.Dtotal)
+	fimg.DescrArr = make([]Descriptor, DescrNumEntries)// fimg.Header.Dtotal)
 	if err := binary.Read(fimg.Reader, binary.LittleEndian, &fimg.DescrArr); err != nil {
 		fimg.DescrArr = nil
 		return fmt.Errorf("reading descriptor array from container file: %s", err)
@@ -92,21 +97,25 @@ func (fimg *FileImage) readDescriptors() error {
 func loadContainer(this js.Value, val []js.Value) interface{} {
 	fmt.Println("The container binary is:", val[0])
         fmt.Println("Size:", val[2].Int())
-
+	fmt.Println("ArrayBuffer:", val[1])
+	
 	fimg := FileImage{}
 
 	// read the string of given size to bytes from the SIF file
-	if err := fimg.loadBytes(val[1].String(), val[2].Int()); err != nil {
+	if err := fimg.loadBytes(val[1], val[2].Int()); err != nil {
+		fmt.Println("Error loading bytes")
 		return nil
 	}
 
 	// read global header from SIF file
 	if err := fimg.readHeader(); err != nil {
+		fmt.Println("Error reading header")
 		return nil
 	}
 
 	// validate global header
 	if err := fimg.isValidSif(); err != nil {
+		fmt.Println("Not valid sif")
 		return nil
 	}
 
@@ -122,8 +131,7 @@ func loadContainer(this js.Value, val []js.Value) interface{} {
 	fmt.Println("Created on:  ", time.Unix(fimg.Header.Ctime, 0))
 	fmt.Println("Modified on: ", time.Unix(fimg.Header.Mtime, 0))
 	fmt.Println("----------------------------------------------------")
-	//fmt.Print(fimg.FmtDescrInfo(uint32(descr)))
-
+	
 	return nil
 }
 

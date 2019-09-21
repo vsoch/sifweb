@@ -48,13 +48,17 @@
                 reader.onload = (function(theFile) {
                   return function(e) {
                     console.log(e);
+
+		    // This is key! We need to read the Array Buffer as Uint8Array
+		    var raw_data = new Uint8Array(e.target.result, 0, e.target.result.byteLength);
+
                     // name, bytes, total bytes
-                    loadContainer(file.name, e.target.result, e.total);
+                    loadContainer(file.name, raw_data, reader.result.byteLength);
                   };
                 })(file);
 
                 // Read in the image file as a data URL.
-                reader.readAsBinaryString(file);
+                reader.readAsArrayBuffer(file);
                 event.preventDefault();
             })
 
