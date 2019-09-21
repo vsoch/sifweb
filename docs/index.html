@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Dinosaur Container Runner</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="upload and run container in browser" />
+        <meta name="keywords" content="container, nginx" />
+        <meta name="author" content="vsoch" />
+
+        <link rel='stylesheet prefetch' href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css'>
+        <link rel="icon" type="image/ico" href="img/favicon.ico"/>
+        <link rel="stylesheet" href="css/style.css" media="screen" type="text/css">
+
+    </head>
+    <body>
+        <div class="container">
+            <main id="wasm"></main>
+            <form class="form" name="upload" method="POST" enctype="multipart/form-data">
+
+                <div class="zone">
+                    <div id="dropZ">
+                        <i id="cloud" class="fa fa-cloud-upload"></i>
+                        <div>Drag and drop your file here, or click to upload</div>                    
+                        <div class="selectFile">       
+                            <label for="file">Select file</label>                   
+                            <input type="file" name="file1" id="file" required>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="terminal" value="no">
+                <input type="submit" value="Upload" style='display:none'>
+
+                <script src='http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
+                <script src="js/selector.js"></script>
+            </form>  
+        </div>
+
+        <script src="wasm_exec.js"></script>
+        <script>
+
+            $('form').submit(function(event){
+
+                var file = $('#file').prop('files')[0];
+                var reader = new FileReader();
+
+                reader.onload = (function(theFile) {
+                  return function(e) {
+                    console.log(e);
+                    // name, bytes, total bytes
+                    loadContainer(file.name, e.target.result, e.total);
+                  };
+                })(file);
+
+                // Read in the image file as a data URL.
+                reader.readAsBinaryString(file);
+                event.preventDefault();
+            })
+
+            if (WebAssembly) {
+                 // WebAssembly.instantiateStreaming is not currently available in Safari
+                 if (WebAssembly && !WebAssembly.instantiateStreaming) { // polyfill
+                     WebAssembly.instantiateStreaming = async (resp, importObject) => {
+                        const source = await (await resp).arrayBuffer();
+                         return await WebAssembly.instantiate(source, importObject);
+                     };
+                 }  
+ 
+                 const go = new Go();
+                 WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
+                    go.run(result.instance);
+                 });
+            } else {
+               console.log("WebAssembly is not supported in your browser")
+            }
+ 
+        </script>
+
+    </body>
+</html>
