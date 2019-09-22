@@ -41,11 +41,28 @@
                 </form>  
               </div>
               <div class="col-md-5 right-side">
-                 <span id="result"></span>
+		<ul class="nav nav-tabs">
+		  <li class="active"><a data-toggle="tab" id="header-tab" class="tabby" href="#header">Header</a></li>
+		  <li><a data-toggle="tab" id="partition-tab" class="tabby" href="#partition">Partition</a></li>
+		  <li><a data-toggle="tab" id="signature-tab" class="tabby" href="#signature">Signature</a></li>
+		  <li><a data-toggle="tab" id="crypto-tab" class="tabby" href="#crypto">Crypto</a></li>
+		</ul>
+
+		<div class="tab-content">
+		  <div id="header" class="tab-pane active">
+		  </div>
+		  <div id="partition" class="tab-pane fade">
+		  </div>
+		  <div id="signature" class="tab-pane fade">
+		  </div>
+		  <div id="crypto" class="tab-pane fade">
+		  </div>
+		</div>
               </div>
           </div>
         </div>
 
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
         <script src="wasm_exec.js"></script>
         <script>
 
@@ -62,8 +79,7 @@
 		    var raw_data = new Uint8Array(e.target.result, 0, e.target.result.byteLength);
 
                     // name, bytes, total bytes
-                    var result = loadContainer(file.name, raw_data, reader.result.byteLength);
-                    console.log("Result is " + result) 
+                    loadContainer(file.name, raw_data, reader.result.byteLength);
 
                   };
                 })(file);

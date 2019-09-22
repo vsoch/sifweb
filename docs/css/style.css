@@ -15,6 +15,31 @@ td {
   color: white;
 }
 
+a {
+  color: white;
+}
+
+a.tabby {
+  margin-right:10px;
+}
+
+a.active {
+  background-color: #d3a5dc9c;
+  border-radius: 5px;
+  padding: 5px;
+  color: black;
+}
+
+a:hover {
+  text-decoration: none;
+  color: yellow;
+}
+
+.tab-pane {
+  color: white;
+  margin-top:10px;
+}
+
 thead td {
   color: #6e006c;
 }
@@ -144,6 +169,7 @@ thead tr td {
     border-radius: 30px;
     padding: 30px;
     margin-left: 20px;
+    word-wrap: break-word;
 }
 
 .label, .form input, .form textarea {
