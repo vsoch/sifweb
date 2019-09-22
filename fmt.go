@@ -69,3 +69,103 @@ func (fimg *FileImage) FmtHeader() string {
 
 	return s
 }
+
+// hashtypeStr returns a string representation of a  hash type.
+// https://github.com/sylabs/sif/blob/master/pkg/sif/fmt.go#L115
+func hashtypeStr(htype Hashtype) string {
+	switch htype {
+	case HashSHA256:
+		return "SHA256"
+	case HashSHA384:
+		return "SHA384"
+	case HashSHA512:
+		return "SHA512"
+	case HashBLAKE2S:
+		return "BLAKE2S"
+	case HashBLAKE2B:
+		return "BLAKE2B"
+	}
+	return "Unknown hash-type"
+}
+
+// datatypeStr returns a string representation of a datatype.
+// https://github.com/sylabs/sif/blob/master/pkg/sif/fmt.go#L60
+func datatypeStr(dtype Datatype) string {
+	switch dtype {
+	case DataDeffile:
+		return "Def.FILE"
+	case DataEnvVar:
+		return "Env.Vars"
+	case DataLabels:
+		return "JSON.Labels"
+	case DataPartition:
+		return "FS"
+	case DataSignature:
+		return "Signature"
+	case DataGenericJSON:
+		return "JSON.Generic"
+	case DataGeneric:
+		return "Generic/Raw"
+	case DataCryptoMessage:
+		return "Cryptographic Message"
+	}
+	return "Unknown data-type"
+}
+
+// formattypeStr returns a string representation of a format type.
+// https://github.com/sylabs/sif/blob/master/pkg/sif/fmt.go#L132
+func formattypeStr(ftype Formattype) string {
+	switch ftype {
+	case FormatOpenPGP:
+		return "OpenPGP"
+	case FormatPEM:
+		return "PEM"
+	}
+	return "Unknown format-type"
+}
+
+// fstypeStr returns a string representation of a file system type.
+// https://github.com/sylabs/sif/blob/master/pkg/sif/fmt.go#L83
+func fstypeStr(ftype Fstype) string {
+	switch ftype {
+	case FsSquash:
+		return "Squashfs"
+	case FsExt3:
+		return "Ext3"
+	case FsImmuObj:
+		return "Archive"
+	case FsRaw:
+		return "Raw"
+	case FsEncryptedSquashfs:
+		return "Encrypted squashfs"
+	}
+	return "Unknown fs-type"
+}
+
+// parttypeStr returns a string representation of a partition type.
+// https://github.com/sylabs/sif/blob/master/pkg/sif/fmt.go#L100
+func parttypeStr(ptype Parttype) string {
+	switch ptype {
+	case PartSystem:
+		return "System"
+	case PartPrimSys:
+		return "*System"
+	case PartData:
+		return "Data"
+	case PartOverlay:
+		return "Overlay"
+	}
+	return "Unknown part-type"
+}
+
+// messagetypeStr returns a string representation of a message type.
+// https://github.com/sylabs/sif/blob/master/pkg/sif/fmt.go#L143
+func messagetypeStr(mtype Messagetype) string {
+	switch mtype {
+	case MessageClearSignature:
+		return "Clear Signature"
+	case MessageRSAOAEP:
+		return "RSA-OAEP"
+	}
+	return "Unknown message-type"
+}

@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"fmt"
 	"syscall/js"
+	"strings"
 	"time"
 )
 
@@ -21,12 +22,11 @@ func (fimg *FileImage) loadBytes(value js.Value, size int) error {
 	sif := make([]byte, size)
 	fmt.Println(value)
 	howmany := js.CopyBytesToGo(sif, value)
-	fmt.Println(howmany)
+	fmt.Println("Found", howmany, "bytes")
 
 	// Read in the string to bytes, n should equal size
 	reader := bytes.NewReader(sif)
         n, _ := reader.Read(sif)
-	fmt.Println(sif)
 
 	// Save the data and size to the FileImage
 	fimg.Filesize = int64(n)
@@ -99,10 +99,111 @@ func (fimg *FileImage) readDescriptors() error {
 	return nil
 }
 
+// getDescriptors in a human friendly map (strings) from the SIF
+// The keys are used to map the data to the web interface (div ids)
+func (fimg *FileImage) getDescriptors() map[string]string {
+
+	descriptors := make(map[string]string)
+
+	for _, v := range fimg.DescrArr {
+		if !v.Used {
+			continue
+		} else {
+
+			// Data Partition
+			if v.Datatype == DataPartition {
+				descriptors["partition"] = fimg.parseDataPartition(v)
+
+			// Data Signatures
+			} else if v.Datatype == DataSignature {
+				descriptors["signature"] = fimg.parseSignature(v)
+
+			// Data Crypto Message
+			} else if v.Datatype == DataCryptoMessage {
+				descriptors["crypto"] = fimg.parseCryptoMessage(v)
+			}
+		}
+	}
+
+	return descriptors
+}
+
+// Parse the data partition to a user friendly string
+func (fimg *FileImage) parseDataPartition(v Descriptor) string {
+
+	name := strings.TrimRight(string(v.Name[:]), "\000")
+	var pinfo Partition
+	var s string
+
+	b := bytes.NewReader(v.Extra[:])
+	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
+		fmt.Println("Error reading partition type %s", err)
+		return ""
+	}
+
+	s += fmt.Sprintln("  Name:     ", name)
+	s += fmt.Sprintln("  Datatype: ", datatypeStr(v.Datatype))
+	s += fmt.Sprintln("  Fstype:   ", fstypeStr(pinfo.Fstype))
+	s += fmt.Sprintln("  Parttype: ", parttypeStr(pinfo.Parttype))
+	s += fmt.Sprintln("  Arch:     ", GetGoArch(trimZeroBytes(pinfo.Arch[:])))
+	return s
+}
+
+// parse the Signature block from the sif
+func (fimg *FileImage) parseSignature(v Descriptor) string {
+
+	name := strings.TrimRight(string(v.Name[:]), "\000")
+	var sinfo Signature
+	var s string
+
+	b := bytes.NewReader(v.Extra[:])
+	if err := binary.Read(b, binary.LittleEndian, &sinfo); err != nil {
+		fmt.Println("Error while extracting Signature extra info: %s", err)
+		return ""
+	}
+
+	s += fmt.Sprintln("  Name:     ", name)
+	s += fmt.Sprintln("  Datatype: ", datatypeStr(v.Datatype))
+	s += fmt.Sprintln("  Hashtype: ", hashtypeStr(sinfo.Hashtype))
+	s += fmt.Sprintln("  Entity:   ", "%0X", sinfo.Entity[:20])
+	s += fmt.Sprintln("  Content:  ", fimg.readDescriptorContent(v.Fileoff, v.Filelen))
+
+	return s
+}
+
+// parseCryptoMessage descriptor into a string
+func (fimg *FileImage) parseCryptoMessage(v Descriptor) string {
+
+	name := strings.TrimRight(string(v.Name[:]), "\000")
+	var s string
+	var cinfo CryptoMessage
+	b := bytes.NewReader(v.Extra[:])
+	if err := binary.Read(b, binary.LittleEndian, &cinfo); err != nil {
+		fmt.Println("Error while extracting Crypto extra info: %s", err)
+		return ""
+	}
+
+	s += fmt.Sprintln("  Name:     ", name)
+	s += fmt.Sprintln("  DataType:  ", datatypeStr(v.Datatype))
+	s += fmt.Sprintln("  Fmttype:  ", formattypeStr(cinfo.Formattype))
+	s += fmt.Sprintln("  Msgtype:  ", messagetypeStr(cinfo.Messagetype))
+	s += fmt.Sprintln("  Content:  ", fimg.readDescriptorContent(v.Fileoff, v.Filelen))
+	return s
+
+}
+
+// Read content based on a seek location and length
+func (fimg *FileImage) readDescriptorContent(fileOffset int64, fileLen int64) string {
+	fimg.seek(fileOffset)
+	content := make([]byte, fileLen)
+        fimg.Reader.Read(content)
+	return string(content)
+}
+
 // returnResult back to the browser, in the innerHTML of the result element
-func returnResult(output string) {
+func returnResult(output string, divid string) {
 	js.Global().Get("document").
-		Call("getElementById", "result").
+		Call("getElementById", divid).
 		Set("innerHTML", output)
 }
 
@@ -118,19 +219,19 @@ func loadContainer(this js.Value, val []js.Value) interface{} {
 
 	// read the string of given size to bytes from the SIF file
 	if err := fimg.loadBytes(val[1], val[2].Int()); err != nil {
-		returnResult("Error loading bytes.")
+		returnResult("Error loading bytes.", "header")
 		return nil
 	}
 
 	// read global header from SIF file
 	if err := fimg.readHeader(); err != nil {
-		returnResult("Error reading header.")
+		returnResult("Error reading header.", "header")
 		return nil
 	}
 
 	// validate global header
 	if err := fimg.isValidSif(); err != nil {
-		returnResult("This is not a valid sif")
+		returnResult("This is not a valid sif", "header")
 		return nil
 	}
 
@@ -138,6 +239,10 @@ func loadContainer(this js.Value, val []js.Value) interface{} {
 	if err := fimg.readDescriptors(); err != nil {
 		fmt.Println("Skipping reading descriptors: ", err)
 	}
+
+	// parse descriptor data
+	descriptors := fimg.getDescriptors()
+	fmt.Println(descriptors)
 
 	// header with newlines
 	header := fimg.FmtHeader()
@@ -156,9 +261,12 @@ func loadContainer(this js.Value, val []js.Value) interface{} {
 	fmt.Println("Modified on: ", time.Unix(fimg.Header.Mtime, 0))
 	fmt.Println("----------------------------------------------------")
 
-	// Send result back to browser
-	returnResult(header)
-	
+	// Send result back to browser, key is div id, content is string
+	returnResult(header, "header")
+	for divid, content := range descriptors { 
+		content = replaceNewLine(content, "<br>")
+		returnResult(content, divid)
+	}
 	return nil
 }
 
